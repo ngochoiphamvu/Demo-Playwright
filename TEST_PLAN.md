@@ -118,7 +118,3 @@ Effective test data management is critical to prevent data collision between tes
 - **Dynamic Data (Products/Inventory):** 
    - *Current Implementation Strategy:* The Playwright suite will dynamically query the DOM for available products (e.g., filtering for items with an `in-stock` badge) rather than hardcoding a volatile product name.
    - *Future API Seeding Strategy:* Leverage the backend API within Playwright's `globalSetup` hook to create a dedicated test product, inject precise stock levels, and register a fresh user. In `globalTeardown`, clean up the generated entities to guarantee absolute determinism.
-- **Static Data (Credentials):** Dummy credentials will be securely managed via `.env` files to prevent hardcoding sensitive information in the repository.
-- **Dynamic Data (Products/Inventory):** 
-   - *Current Implementation Strategy:* The Playwright suite will dynamically query the DOM for available products (e.g., filtering for items with an `in-stock` badge) rather than hardcoding a volatile product name.
-   - *Future API Seeding Strategy:* Leverage the backend API within Playwright's `globalSetup` hook to create a dedicated test product, inject precise stock levels, and register a fresh user. In `globalTeardown`, clean up the generated entities to guarantee absolute determinism.
