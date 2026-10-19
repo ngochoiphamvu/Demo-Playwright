@@ -32,11 +32,10 @@ export class LoginPage {
     await this.loginBtn.click();
     await responsePromise;
   }
-  async loginSuccessfully(email: string, pass: string) {
-    await this.login(email, pass);
+async loginSuccessfully(email: string, pass: string) {
     await Promise.all([
       this.page.waitForURL(/.*account/, { timeout: 15000 }),
-      this.loginBtn.click()
+      this.login(email, pass)
     ]);
   }
 }
