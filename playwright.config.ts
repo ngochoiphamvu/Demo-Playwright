@@ -20,6 +20,12 @@ export default defineConfig({
     screenshot: 'only-on-failure', 
     actionTimeout: 30000,
     navigationTimeout: 30000,
+    // 1. Set a custom user agent to mimic a real browser and avoid detection by anti-bot mechanisms
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',  
+    // 2. Turn off "AutomationControlled" to by pass Cloudflare
+    launchOptions: {
+      args: ['--disable-blink-features=AutomationControlled'],
+    },
   },
   projects: [
     {
