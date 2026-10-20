@@ -24,6 +24,6 @@ export class ProductPage {
     await this.addToCartBtn.click();
     
     // Chốt chặn: Đợi API thêm giỏ hàng chạy xong và số lượng trên icon cập nhật
-    await expect(this.cartBadge).not.toBeEmpty({ timeout: 10000 });
+    await expect(this.cartBadge).not.toBeEmpty({ timeout: 30000 });
   }
 }

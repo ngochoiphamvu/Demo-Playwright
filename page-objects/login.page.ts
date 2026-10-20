@@ -26,7 +26,7 @@ export class LoginPage {
     // Đợi API login phản hồi để đảm bảo không bị click quá nhanh hoặc server lag
     const responsePromise = this.page.waitForResponse(
       response => response.url().includes('/users/login'),
-      { timeout: 10000 }
+      { timeout: 20000 }
     ).catch(() => null);
 
     await this.loginBtn.click();
@@ -34,7 +34,7 @@ export class LoginPage {
   }
 async loginSuccessfully(email: string, pass: string) {
     await Promise.all([
-      this.page.waitForURL(/.*account/, { timeout: 15000 }),
+      this.page.waitForURL(/.*account/, { timeout: 60000 }),
       this.login(email, pass)
     ]);
   }

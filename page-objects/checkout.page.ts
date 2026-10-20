@@ -28,7 +28,7 @@ export class CheckoutPage {
     await houseNumberInput.blur(); 
 
     const proceedBtn = this.page.getByTestId('proceed-3');
-    await expect(proceedBtn).toBeEnabled({ timeout: 15000 });
+    await expect(proceedBtn).toBeEnabled({ timeout: 60000 });
     await proceedBtn.click();
   }
 

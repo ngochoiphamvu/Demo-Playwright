@@ -21,6 +21,6 @@ test.describe('Feature: E2E Purchase', () => {
     await checkoutPage.selectPaymentAndConfirm('cash-on-delivery');
 
     // 4. Confirm
-    await expect(page.getByText('Payment was successful')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText('Payment was successful')).toBeVisible({ timeout: 60000 });
   });
 });

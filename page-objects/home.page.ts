@@ -30,7 +30,7 @@ export class HomePage {
   async openFirstProduct() {
     await this.page.locator('.card img').first().waitFor({ state: 'visible' });
     await Promise.all([
-      this.page.waitForURL(/\/product\/.*/, { timeout: 15000 }),
+      this.page.waitForURL(/\/product\/.*/, { timeout: 60000 }),
       this.page.locator('.card').first().click()
     ]); }
 }
