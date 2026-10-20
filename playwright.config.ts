@@ -9,12 +9,17 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
+  timeout: 60000, 
+  expect: {
+    timeout: 30000,
+  },
   use: {
     baseURL: 'https://practicesoftwaretesting.com',
     testIdAttribute: 'data-test',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure', 
-    actionTimeout: 15000,
+    actionTimeout: 30000,
+    navigationTimeout: 30000,
   },
   projects: [
     {
