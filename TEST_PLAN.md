@@ -20,23 +20,29 @@ Functional UI testing of the end-to-end purchase journey on `https://practicesof
 
 ## 2. Test Conditions & Test Design Reasoning
 
-To ensure systematic coverage, test conditions encompass **positive, negative, boundary, and edge cases**. The test design applies peer-level testing techniques (Equivalence Partitioning, Boundary Value Analysis, Decision Table, State Transition, Error Guessing) strictly mapped to the system's **Acceptance Criteria (AC)**.
+To ensure systematic coverage, test conditions encompass **positive, negative, boundary, edge, and exception cases**. The test design applies peer-level testing techniques strictly mapped to the system's **Acceptance Criteria (AC)**.
 
 ### 2.1. Feature 1: Login Form
 **Acceptance Criteria Mapped:** Users must authenticate using a registered email and password. Passwords have length constraints. Invalid inputs must display specific UI errors.
 
 - **Positive Cases (EP):** 
   - Valid Email + Valid Password &rarr; Access Granted.
-- **Negative Cases (EP):** 
-  - Invalid email formats, unregistered emails, or incorrect passwords &rarr; Access Denied with appropriate validation errors.
+  - Emails with valid special characters (e.g., `user+alias@gmail.com`).
+- **Negative & Exception Cases (EP):** 
+  - **Null/Empty:** Leave both fields blank, or only one field blank &rarr; UI requires fields.
+  - **Whitespace:** Leading/trailing spaces in email or password &rarr; System should trim email but keep password spaces.
+  - **Invalid Format:** Missing `@`, missing domain.
 - **Boundary Cases (BVA):** 
-  - Password length limits. Testing exactly the minimum/maximum allowed characters (e.g., if AC specifies min 6 &rarr; test 5 and 6 characters) to ensure the form validates lengths properly.
+  - Password length limits. Testing exactly the minimum/maximum allowed characters.
 - **Edge Cases (Error Guessing):** 
-  - SQL Injection / XSS attempts in the email field (`' OR 1=1 --`).
+  - SQL Injection / XSS attempts in the email field (`' OR 1=1 --`, `<script>`).
 
 ### 2.2. Feature 2: Search/Browse Products
-- **Positive/Negative (EP):** Existing keywords (exact/partial match) &rarr; Display results. Non-existent keywords &rarr; Display "No products found".
-- **Edge Cases (Error Guessing):** Inputting special HTML/JS characters (e.g., `<script>`) to verify XSS prevention.
+- **Positive/Negative (EP):** Existing keywords &rarr; Display results. Non-existent keywords &rarr; "No products found".
+- **Exception & Edge Cases (Error Guessing):**
+  - **Null/Empty:** Submitting an empty search &rarr; Should return all products or prompt to enter a keyword.
+  - **Extreme Length:** Inputting a string of 10,000 characters &rarr; Handled gracefully without causing 500 Server Error.
+  - **Wildcards/Special Chars:** Inputting SQL wildcards (`%`, `_`) or HTML tags (`<button>`) to verify data sanitization.
 
 ### 2.3. Feature 3: Add to Cart
 - **Boundary Cases (BVA on Quantity):**
@@ -44,19 +50,26 @@ To ensure systematic coverage, test conditions encompass **positive, negative, b
   - `Qty = 1` (Valid minimum) &rarr; Success.
   - `Qty = Max Stock` (Upper bound) &rarr; Success.
   - `Qty = Max Stock + 1` (Invalid upper bound) &rarr; Blocked/Error.
-- **Edge Cases (State Transition):**
-  - `Active Cart` &rarr; `Session Expiry/Logout` &rarr; `Login Again` &rarr; Expected: Cart state is persisted.
+- **Exception & Edge Cases:**
+  - **Invalid Input:** Manually typing negative numbers (`-5`), decimals (`1.5`), or text (`abc`) into the quantity input field.
+  - **State Transition:** `Active Cart` &rarr; `Session Expiry/Logout` &rarr; `Login Again` &rarr; Expected: Cart state is persisted.
+  - **Rapid Actions:** Clicking "Add to Cart" 10 times rapidly to check if API requests are handled without race conditions.
 
 ### 2.4. Feature 4: Checkout Pipeline (Address & Payment Forms)
-**Acceptance Criteria Mapped:** Address fields (Address, City, State, Country, Postcode) are mandatory. Payment requires valid method selection. Cannot checkout with 0 stock.
+**Acceptance Criteria Mapped:** Address fields are mandatory. Entering Country, Postal Code, and House Number must automatically fetch and fill the Street, City, and State fields. Payment requires valid method selection. Cannot checkout with 0 stock.
 
-- **Positive Cases (EP):**
-  - All mandatory address fields filled correctly & valid payment selected &rarr; Allowed to proceed and place order.
-- **Negative Cases (EP):**
-  - Mandatory fields missing in Address form &rarr; Block transition to the next step, highlight missing fields.
-  - Invalid Credit Card format &rarr; Payment rejected.
+- **Positive Cases (API Integration & EP):**
+  - **Address Auto-fill:** Entering a valid combination of Country + Postal Code + House Number &rarr; UI shows loading state &rarr; Street, City, and State fields are auto-populated correctly.
+  - All mandatory address fields filled correctly & valid payment selected &rarr; Proceed allowed.
+- **Negative/Exception Cases (EP & API Handling):**
+  - **Null/Empty:** Mandatory fields missing in Address form &rarr; Block transition, highlight fields.
+  - **Invalid Auto-fill Data:** Non-existent Postal Code / House Number &rarr; API returns "Not Found", UI displays appropriate validation error.
+  - **API Failure Fallback (Error Guessing):** Address Lookup API times out or returns 500 &rarr; System must gracefully allow the user to manually type into Street, City, and State to prevent blocking the purchase flow.
+- **Exception Cases (Error Guessing on Address):**
+  - Extremely long text in manually entered fields (e.g., 500 chars) &rarr; Verify UI doesn't break and DB doesn't crash.
+  - Special characters / XSS in Shipping Address &rarr; Ensure they render safely in the Invoice.
 - **Edge/Boundary Cases (Decision Table & Error Guessing):**
-  - **Decision Table Testing on Payment Rules:**
+   - *Decision Table Testing on Payment Rules:*
     Used to verify complex business logic during the final checkout step.
 
     | Conditions | Rule 1 | Rule 2 | Rule 3 | Rule 4 | Rule 5 |
@@ -72,13 +85,14 @@ To ensure systematic coverage, test conditions encompass **positive, negative, b
     | Show "Payment Failed" | | | | **X** | |
     | Show "Gateway Timeout" | | | | | **X** |
   - *Stock Depletion mid-checkout:* DB stock changes to 0 externally while the user is at the Payment step. (Decision Table: Payment Valid + Stock Invalid &rarr; Show "Out of Stock" Error, halt transaction).
+  - *Network Drop:* Simulate network disconnect exactly when clicking "Submit Payment" &rarr; Should show timeout error, not process duplicate charges.
   - *Session Timeout:* Token expires right before clicking "Confirm Order".
 
 ### 2.5. Feature 5: Order Confirmation
-- **Edge Cases (State Transition):**
-  - `Order Confirmed` &rarr; User clicks browser's `Back` button &rarr; Try to resubmit. Expected: System prevents duplicate submission.
-- **Edge Cases (Error Guessing):**
-  - *Race Condition:* Rapidly clicking the "Confirm Order" button to ensure it debounces and processes exactly one transaction.
+- **Exception & Edge Cases (State Transition & Error Guessing):**
+  - **Back Button:** `Order Confirmed` &rarr; Click browser's `Back` button &rarr; Try to resubmit &rarr; System prevents duplicate order.
+  - **Refresh (F5):** Reloading the confirmation page &rarr; Should not re-trigger the payment API.
+  - **Direct URL Access:** Copying the confirmation URL and accessing it from an Incognito window / unauthenticated session &rarr; Should redirect to Login or 403 Forbidden.
 
 ---
 
